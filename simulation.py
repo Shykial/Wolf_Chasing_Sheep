@@ -4,12 +4,15 @@ import json
 import math
 import os
 import random
-from typing import Final, Iterable, Any
+from configparser import ConfigParser
+from typing import Iterable, Any
 
 from decorators import timer
-from entities import Sheep, Wolf, sheep_move_dist, wolf_move_dist
+from entities import Sheep, Wolf
 
-init_pos_limit: Final = 10.0
+
+def get_default_pos_limit() -> float:
+    return 10.0
 
 
 def get_parsed_args() -> argparse.Namespace:
@@ -28,6 +31,30 @@ def get_parsed_args() -> argparse.Namespace:
                            help='Flag set to wait for keyboard input after displaying each round statistics')
 
     return argparser.parse_args()
+
+
+def get_config_parser(config_file: str) -> ConfigParser:
+    config = ConfigParser()
+    config.read(config_file)
+    return config
+
+
+def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
+    try:
+        init_pos_limit = float(config['Terrain']['InitPosLimit'])
+        sheep_move_dist = float(config['Movement']['SheepMoveDist'])
+        wolf_move_dist = float(config['Movement']['WolfMoveDist'])
+    except KeyError as error:
+        raise KeyError(f'Missing key for {error.args[0]}, have you declared it in config file?')
+    except ValueError:
+        raise ValueError('Values passed in the config file could not be converted to float, correct them and try again')
+
+    for val in (init_pos_limit, sheep_move_dist, wolf_move_dist):
+        if val <= 0:
+            raise ValueError(f'Values passed in the config file need to be floats higher than 0,'
+                             f' correct value {val} and try again')
+
+    return init_pos_limit, sheep_move_dist, wolf_move_dist
 
 
 def export_to_json(data: Any, filename: str = 'pos.json', directory: str = '.'):
@@ -58,8 +85,9 @@ class Simulation:
 
     def add_round_to_simulation_data(self, round_number: int):
         self.simulation_data.append({'round_no': round_number, 'wolf_pos': self.wolf.position,
-                                     'sheep_pos': [sheep.position if sheep.alive else None for sheep in
+                                     'sheep_pos': [sheep.position.copy() if sheep.alive else None for sheep in
                                                    self.all_sheep]})
+        # using copy on sheep.position to avoid referencing sheep.position list changing in time
 
     def get_round_stats_str(self, round_number: int, sheep_eaten: Sheep = None) -> str:
         sheep_eaten_str = f'Sheep with ID {sheep_eaten.ID} has been eaten this round\n' if sheep_eaten else ''
@@ -85,7 +113,7 @@ Alive sheep: {len(self.alive_sheep)}
         distance_vector = [s_pos - w_pos for s_pos, w_pos in zip(sheep.position, self.wolf.position)]
         # gives [sheep_x - wolf_x, sheep_y - wolf_y]
 
-        self.wolf.position = [w_pos + (wolf_move_dist / distance) * vector
+        self.wolf.position = [w_pos + (self.wolf.move_dist / distance) * vector
                               for w_pos, vector in zip(self.wolf.position, distance_vector)]
 
     def run(self, number_of_rounds: int, await_input_after_round: bool = False):
@@ -96,11 +124,11 @@ Alive sheep: {len(self.alive_sheep)}
                 break
 
             for sheep in self.alive_sheep:
-                sheep.position[random.randint(0, 1)] += random.choice((-1, 1)) * sheep_move_dist
+                sheep.position[random.randint(0, 1)] += random.choice((-1, 1)) * sheep.move_dist
 
             closest_sheep, closest_sheep_distance = self.get_closest_sheep()
             sheep_eaten = None
-            if closest_sheep_distance < wolf_move_dist:
+            if closest_sheep_distance < self.wolf.move_dist:
                 self.eat_sheep(closest_sheep)
                 sheep_eaten = closest_sheep
             else:
@@ -115,6 +143,14 @@ Alive sheep: {len(self.alive_sheep)}
 def main():
     args = get_parsed_args()
 
+    init_pos_limit, sheep_move_dist, wolf_move_dist = get_default_pos_limit(), None, None
+    # assigning None type to sheep and wolf move dist initially,
+    # so that default values from entities.py would be used if not specified otherwise
+
+    if config_file := args.config:
+        config = get_config_parser(config_file)
+        init_pos_limit, sheep_move_dist, wolf_move_dist = get_values_from_config(config)
+
     number_of_rounds = rounds_num if (rounds_num := args.rounds) else 50
     number_of_sheep = sheep_num if (sheep_num := args.sheep) else 15
     wait_for_input = args.wait
@@ -126,9 +162,9 @@ def main():
     else:
         data_directory = '.'
 
-    all_sheep = [Sheep(i, [random.uniform(-init_pos_limit, init_pos_limit) for _ in range(2)])
-                 for i in range(number_of_sheep)]
-    wolf = Wolf()
+    all_sheep = [Sheep(i, [random.uniform(-init_pos_limit, init_pos_limit) for _ in range(2)],
+                       move_dist=sheep_move_dist) for i in range(number_of_sheep)]
+    wolf = Wolf(move_dist=wolf_move_dist)
 
     simulation = Simulation(all_sheep, wolf)
     simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
