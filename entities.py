@@ -1,5 +1,7 @@
-sheep_move_dist = 0.5
-wolf_move_dist = 1
+from typing import Final
+
+sheep_move_dist: Final = 0.5
+wolf_move_dist: Final = 1
 
 
 class Sheep:
@@ -10,7 +12,7 @@ class Sheep:
         self.alive = True
 
     def __str__(self) -> str:
-        return f'Alive sheep, at position {self.position}'
+        return f'{"Alive sheep," if self.alive else "Dead sheep, eaten"} at position {self.position}'
 
 
 class Wolf:

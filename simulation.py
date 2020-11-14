@@ -1,21 +1,44 @@
+import argparse
 import csv
 import json
 import math
+import os
 import random
+from typing import Final, Iterable, Any
 
 from decorators import timer
 from entities import Sheep, Wolf, sheep_move_dist, wolf_move_dist
 
-init_pos_limit = 10.0
+init_pos_limit: Final = 10.0
 
 
-def export_to_json(data, filename: str = 'pos.json'):
-    with open(filename, 'w', encoding='utf-8') as f:
+def get_parsed_args() -> argparse.Namespace:
+    argparser = argparse.ArgumentParser()
+
+    argparser.add_argument('-c', '--config', metavar='FILE', help='Filename to read configuration from')
+    argparser.add_argument('-d', '--dir', help='Subdirectory to store exported program data')
+    argparser.add_argument('-l', '--log', metavar='LEVEL', choices=('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+                           type=str.upper, help='Logging events, where LEVEL stands for event level,'
+                                                'one of (DEBUG, INFO, WARNING,  ERROR, CRITICAL)')
+    # using str.upper for case insensitive arg parsing
+
+    argparser.add_argument('-r', '--rounds', metavar='NUM', type=int, help='Number of rounds in the simulation')
+    argparser.add_argument('-s', '--sheep', metavar='NUM', type=int, help='Number of sheep in the simulation')
+    argparser.add_argument('-w', '--wait', action='store_true',
+                           help='Flag set to wait for keyboard input after displaying each round statistics')
+
+    return argparser.parse_args()
+
+
+def export_to_json(data: Any, filename: str = 'pos.json', directory: str = '.'):
+    file_path = os.path.join(directory, filename)
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
 
-def export_to_csv(data, filename: str = 'alive.csv', header_row=None):
-    with open(filename, 'w', encoding='utf-8', newline='') as f:
+def export_to_csv(data: Iterable, filename: str = 'alive.csv', directory: str = '.', header_row=None):
+    file_path = os.path.join(directory, filename)
+    with open(file_path, 'w', encoding='utf-8', newline='') as f:
         csv_writer = csv.writer(f)
         if header_row:
             csv_writer.writerow(header_row)
@@ -65,7 +88,7 @@ Alive sheep: {len(self.alive_sheep)}
         self.wolf.position = [w_pos + (wolf_move_dist / distance) * vector
                               for w_pos, vector in zip(self.wolf.position, distance_vector)]
 
-    def run(self, number_of_rounds: int):
+    def run(self, number_of_rounds: int, await_input_after_round: bool = False):
 
         for round_number in range(1, number_of_rounds + 1):
             if len(self.alive_sheep) == 0:
@@ -84,22 +107,37 @@ Alive sheep: {len(self.alive_sheep)}
                 self.move_towards_sheep(closest_sheep, closest_sheep_distance)
             self.add_round_to_simulation_data(round_number)
             print(self.get_round_stats_str(round_number, sheep_eaten))
+            if await_input_after_round:
+                input('Press any key to move onto next round')
 
 
 @timer
 def main():
-    number_of_rounds = 50
-    number_of_sheep = 15
+    args = get_parsed_args()
+
+    number_of_rounds = rounds_num if (rounds_num := args.rounds) else 50
+    number_of_sheep = sheep_num if (sheep_num := args.sheep) else 15
+    wait_for_input = args.wait
+
+    if directory := args.dir:
+        data_directory = directory
+        if not os.path.exists(directory):
+            os.makedirs(directory)  # using makedirs instead of simple mkdir to allow nested directories
+    else:
+        data_directory = '.'
+
     all_sheep = [Sheep(i, [random.uniform(-init_pos_limit, init_pos_limit) for _ in range(2)])
                  for i in range(number_of_sheep)]
     wolf = Wolf()
 
     simulation = Simulation(all_sheep, wolf)
-    simulation.run(number_of_rounds)
-    export_to_json(simulation.simulation_data)
+    simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
+
+    export_to_json(simulation.simulation_data, directory=data_directory)
+
     alive_sheep_data = [(_round['round_no'], sum(1 for pos in _round['sheep_pos'] if pos))
                         for _round in simulation.simulation_data]
-    export_to_csv(alive_sheep_data, header_row=('Round number', 'Alive sheep'))
+    export_to_csv(alive_sheep_data, directory=data_directory, header_row=('Round number', 'Alive sheep'))
 
 
 if __name__ == '__main__':
