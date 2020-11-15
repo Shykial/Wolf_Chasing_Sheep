@@ -30,7 +30,17 @@ def get_parsed_args() -> argparse.Namespace:
     argparser.add_argument('-w', '--wait', action='store_true',
                            help='Flag set to wait for keyboard input after displaying each round statistics')
 
-    return argparser.parse_args()
+    parsed_args = argparser.parse_args()
+    validate_parsed_args(parsed_args)
+    return parsed_args
+
+
+# validating rounds and sheep arguments as negative values would otherwise be accepted.
+def validate_parsed_args(parsed_args: argparse.Namespace):
+    int_arguments = {'rounds': parsed_args.rounds, 'sheep': parsed_args.sheep}
+    for arg_name, arg_value in int_arguments.items():
+        if arg_value is not None and arg_value <= 0:
+            raise ValueError(f'Argument "{arg_name}" must be a positive integer, provided {arg_value}')
 
 
 def get_config_parser(config_file: str) -> ConfigParser:
@@ -45,7 +55,7 @@ def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
         sheep_move_dist = float(config['Movement']['SheepMoveDist'])
         wolf_move_dist = float(config['Movement']['WolfMoveDist'])
     except KeyError as error:
-        raise KeyError(f'Missing key for {error.args[0]}, have you declared it in config file?')
+        raise KeyError(f'Missing key for {error.args[0]}, have you declared it in the config file?')
     except ValueError:
         raise ValueError('Values passed in the config file could not be converted to float, correct them and try again')
 
