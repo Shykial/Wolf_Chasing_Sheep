@@ -1,14 +1,14 @@
 import argparse
 import csv
 import json
+import logging
 import os
 import random
 from configparser import ConfigParser
-from typing import Any, Iterable
-
+from typing import Any, Iterable, Union
 import entities
 import simulation
-from decorators import timer
+from decorators import logger
 
 
 def get_parsed_args() -> argparse.Namespace:
@@ -66,12 +66,28 @@ def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
     return init_pos_limit, sheep_move_dist, wolf_move_dist
 
 
+@logger('debug')
+def setup_logging_config(level: Union[str, None], filename: str = 'chase.log', directory: str = '.'):
+    if level is not None:
+        file_path = os.path.join(directory, filename)
+        logging_levels = {'DEBUG': logging.DEBUG, 'INFO': logging.INFO,
+                          'WARNING': logging.WARNING, 'ERROR': logging.ERROR,
+                          'CRITICAL': logging.CRITICAL}
+        logging_level = logging_levels[level]
+        logging.basicConfig(filename=file_path, level=logging_level)
+        # logging.basicConfig(level=logging_level)
+    else:
+        logging.disable()
+
+
+@logger('debug')
 def export_to_json(data: Any, filename: str = 'pos.json', directory: str = '.'):
     file_path = os.path.join(directory, filename)
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
 
+@logger('debug')
 def export_to_csv(data: Iterable, filename: str = 'alive.csv', directory: str = '.', header_row=None):
     file_path = os.path.join(directory, filename)
     with open(file_path, 'w', encoding='utf-8', newline='') as f:
@@ -82,7 +98,8 @@ def export_to_csv(data: Iterable, filename: str = 'alive.csv', directory: str = 
             csv_writer.writerow(item)
 
 
-@timer
+# @timer
+@logger('debug')
 def main():
     args = get_parsed_args()
 
@@ -105,17 +122,19 @@ def main():
     else:
         data_directory = '.'
 
+    setup_logging_config(args.log, filename='jajko.log', directory=data_directory)
+
     all_sheep = [entities.Sheep(i, [random.uniform(-init_pos_limit, init_pos_limit) for _ in range(2)],
                                 move_dist=sheep_move_dist) for i in range(number_of_sheep)]
     wolf = entities.Wolf(move_dist=wolf_move_dist)
 
-    main_simulation = simulation.Simulation(all_sheep, wolf)
-    main_simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
+    chase_simulation = simulation.Simulation(all_sheep, wolf)
+    chase_simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
 
-    export_to_json(main_simulation.simulation_data, directory=data_directory)
+    export_to_json(chase_simulation.simulation_data, directory=data_directory)
 
     alive_sheep_data = [(_round['round_no'], sum(1 for pos in _round['sheep_pos'] if pos))
-                        for _round in main_simulation.simulation_data]
+                        for _round in chase_simulation.simulation_data]
     export_to_csv(alive_sheep_data, directory=data_directory, header_row=('Round number', 'Alive sheep'))
 
 
