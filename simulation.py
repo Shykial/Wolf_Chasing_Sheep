@@ -1,6 +1,8 @@
 import math
 import random
 
+from typing import List, Tuple
+
 from entities import Sheep, Wolf
 
 
@@ -9,7 +11,7 @@ def get_default_pos_limit() -> float:
 
 
 class Simulation:
-    def __init__(self, all_sheep: list[Sheep], wolf: Wolf):
+    def __init__(self, all_sheep: List[Sheep], wolf: Wolf):
         self.all_sheep = all_sheep
         self.wolf = wolf
         self.alive_sheep = self.all_sheep.copy()
@@ -31,7 +33,7 @@ Wolf position: x = {self.wolf.position[0]:.3f}, y = {self.wolf.position[1]:.3f}
 Alive sheep: {len(self.alive_sheep)}
 {sheep_eaten_str}'''
 
-    def get_closest_sheep(self) -> tuple[Sheep, float]:
+    def get_closest_sheep(self) -> Tuple[Sheep, float]:
         sheep_distances = {sheep: math.dist(self.wolf.position, sheep.position) for sheep in self.alive_sheep}
 
         return (sheep := min(sheep_distances, key=sheep_distances.get)), sheep_distances[sheep]

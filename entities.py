@@ -1,3 +1,6 @@
+from typing import List
+
+
 def get_default_sheep_move_dist() -> float:
     return 0.5
 
@@ -7,7 +10,7 @@ def get_default_wolf_move_dist() -> float:
 
 
 class Sheep:
-    def __init__(self, ID: int, position: list[float], move_dist: float = None):
+    def __init__(self, ID: int, position: List[float], move_dist: float = None):
         self.ID = ID
         self.position = position
         self.move_dist = move_dist if move_dist is not None else get_default_sheep_move_dist()

@@ -4,7 +4,7 @@ import json
 import os
 import random
 from configparser import ConfigParser
-from typing import Any, Iterable
+from typing import Any, Iterable, Tuple
 
 import entities
 import simulation
@@ -48,7 +48,7 @@ def get_config_parser(config_file: str) -> ConfigParser:
     return config
 
 
-def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
+def get_values_from_config(config: ConfigParser) -> Tuple[float, float, float]:
     try:
         init_pos_limit = float(config['Terrain']['InitPosLimit'])
         sheep_move_dist = float(config['Movement']['SheepMoveDist'])
@@ -109,13 +109,13 @@ def main():
                                 move_dist=sheep_move_dist) for i in range(number_of_sheep)]
     wolf = entities.Wolf(move_dist=wolf_move_dist)
 
-    main_simulation = simulation.Simulation(all_sheep, wolf)
-    main_simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
+    chase_simulation = simulation.Simulation(all_sheep, wolf)
+    chase_simulation.run(number_of_rounds, await_input_after_round=wait_for_input)
 
-    export_to_json(main_simulation.simulation_data, directory=data_directory)
+    export_to_json(chase_simulation.simulation_data, directory=data_directory)
 
     alive_sheep_data = [(_round['round_no'], sum(1 for pos in _round['sheep_pos'] if pos))
-                        for _round in main_simulation.simulation_data]
+                        for _round in chase_simulation.simulation_data]
     export_to_csv(alive_sheep_data, directory=data_directory, header_row=('Round number', 'Alive sheep'))
 
 
