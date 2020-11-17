@@ -6,9 +6,10 @@ import os
 import random
 from configparser import ConfigParser
 from typing import Any, Iterable, Union
+
 import entities
 import simulation
-from decorators import logger
+from decorators import Logger
 
 
 def get_parsed_args() -> argparse.Namespace:
@@ -66,7 +67,7 @@ def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
     return init_pos_limit, sheep_move_dist, wolf_move_dist
 
 
-@logger('debug')
+@Logger.log('debug')
 def setup_logging_config(level: Union[str, None], filename: str = 'chase.log', directory: str = '.'):
     if level is not None:
         file_path = os.path.join(directory, filename)
@@ -74,20 +75,22 @@ def setup_logging_config(level: Union[str, None], filename: str = 'chase.log', d
                           'WARNING': logging.WARNING, 'ERROR': logging.ERROR,
                           'CRITICAL': logging.CRITICAL}
         logging_level = logging_levels[level]
-        logging.basicConfig(filename=file_path, level=logging_level)
+        # format_str = '%(levelname)s:%(name)s:%(module)s:%(message)s'
+        format_str = '%(levelname)s:\t%(asctime)s - %(message)s'
+        logging.basicConfig(filename=file_path, level=logging_level, format=format_str)
         # logging.basicConfig(level=logging_level)
     else:
         logging.disable()
 
 
-@logger('debug')
+@Logger.log('debug')
 def export_to_json(data: Any, filename: str = 'pos.json', directory: str = '.'):
     file_path = os.path.join(directory, filename)
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
 
 
-@logger('debug')
+@Logger.log('debug')
 def export_to_csv(data: Iterable, filename: str = 'alive.csv', directory: str = '.', header_row=None):
     file_path = os.path.join(directory, filename)
     with open(file_path, 'w', encoding='utf-8', newline='') as f:
@@ -99,7 +102,7 @@ def export_to_csv(data: Iterable, filename: str = 'alive.csv', directory: str = 
 
 
 # @timer
-@logger('debug')
+@Logger.log('debug')
 def main():
     args = get_parsed_args()
 
@@ -123,6 +126,7 @@ def main():
         data_directory = '.'
 
     setup_logging_config(args.log, filename='jajko.log', directory=data_directory)
+    # Logger.set_logger(logging.getLogger(__name__))
 
     all_sheep = [entities.Sheep(i, [random.uniform(-init_pos_limit, init_pos_limit) for _ in range(2)],
                                 move_dist=sheep_move_dist) for i in range(number_of_sheep)]
