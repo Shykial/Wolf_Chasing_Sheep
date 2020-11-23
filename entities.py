@@ -1,4 +1,4 @@
-from decorators import Logger
+from logger import Logger
 
 
 class Sheep:

@@ -9,7 +9,7 @@ from typing import Any, Iterable, Union
 
 from entities import Sheep, Wolf
 from simulation import Simulation
-from decorators import Logger
+from logger import Logger
 
 
 def get_parsed_args() -> argparse.Namespace:

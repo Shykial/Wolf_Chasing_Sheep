@@ -1,7 +1,7 @@
 import math
 import random
 
-from decorators import Logger
+from logger import Logger
 from entities import Sheep, Wolf
 
 
