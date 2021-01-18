@@ -2,13 +2,12 @@ import csv
 import json
 import os
 import random
-import sys
 from typing import Any, Iterable
 
-from configuration import get_parsed_args, get_config_parser, get_values_from_config, setup_logging_config
-from entities import Sheep, Wolf
-from simulation import Simulation
-from logger import Logger
+from .configuration import get_parsed_args, get_config_parser, get_values_from_config, setup_logging_config
+from .entities import Sheep, Wolf
+from .logger import Logger
+from .simulation import Simulation
 
 
 @Logger.log_decor('debug')

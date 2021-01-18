@@ -1,8 +1,8 @@
 import math
 import random
 
-from logger import Logger
-from entities import Sheep, Wolf
+from .entities import Sheep, Wolf
+from .logger import Logger
 
 
 class Simulation:

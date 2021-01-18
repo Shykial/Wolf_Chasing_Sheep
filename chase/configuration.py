@@ -4,7 +4,7 @@ import os
 from configparser import ConfigParser
 from typing import Union
 
-from logger import Logger
+from .logger import Logger
 
 
 def get_parsed_args() -> argparse.Namespace:
@@ -64,7 +64,7 @@ def get_values_from_config(config: ConfigParser) -> tuple[float, float, float]:
 
 # using Union[str, None] instead of Optional[str] to avoid ambiguity
 @Logger.log_decor('debug')
-def setup_logging_config(level: Union[str, None], filename: str = 'chase.log', directory: str = '.'):
+def setup_logging_config(level: Union[str, None], filename: str = 'chase_backup.log', directory: str = '.'):
     if level:
         file_path = os.path.join(directory, filename)
         logging_levels = {'DEBUG': logging.DEBUG, 'INFO': logging.INFO,
