@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import random
+import sys
 from typing import Any, Iterable
 
 from configuration import get_parsed_args, get_config_parser, get_values_from_config, setup_logging_config
@@ -65,8 +66,12 @@ def main():
 
     alive_sheep_data = [(_round['round_no'], sum(1 for pos in _round['sheep_pos'] if pos))
                         for _round in chase_simulation.simulation_data]
+
     export_to_csv(alive_sheep_data, directory=data_directory, header_row=('Round number', 'Alive sheep'))
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        Logger.log('exception', str(e))

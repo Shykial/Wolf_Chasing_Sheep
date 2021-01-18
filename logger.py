@@ -13,7 +13,7 @@ class Logger:
     def log(cls, level: str, log_msg: str, logger: logging.Logger = None):
         """Logging function logging message on certain level and logger (default class logger if not specified)
 
-        :param level: Logging level, needs to be one of ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+        :param level: Logging level, needs to be one of ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "EXCEPTION")
         :param log_msg: Logging message
         :param logger: Logger instance to be used, class attribute default_logger will be read if no other is specified
         """
@@ -22,7 +22,7 @@ class Logger:
         log_func(log_msg)
 
     @classmethod
-    def get_log_func(cls, level, logger):
+    def get_log_func(cls, level, logger=None):
         if logger is None:
             if cls.default_logger is not None:
                 logger = cls.default_logger
@@ -30,7 +30,7 @@ class Logger:
                 raise AttributeError('No valid logger specified')
         logging_levels = {'DEBUG': logger.debug, 'INFO': logger.info,
                           'WARNING': logger.warning, 'ERROR': logger.error,
-                          'CRITICAL': logger.critical}
+                          'CRITICAL': logger.critical, 'EXCEPTION': logger.exception}
         try:
             return logging_levels[level.upper()]
         except KeyError:

@@ -19,7 +19,6 @@ class Simulation:
 
         self.simulation_data = []
 
-    # @Logger.log_decor('debug', class_name=class_name)
     # not logging repr using Logger decorator as that would cause infinite recursion
     def __repr__(self) -> str:
         return f'Simulation object: all_sheep = {self.all_sheep}, wolf = {repr(self.wolf)},' \
@@ -27,9 +26,12 @@ class Simulation:
 
     @Logger.log_decor('debug', class_name=class_name)
     def add_round_to_simulation_data(self, round_number: int):
-        self.simulation_data.append({'round_no': round_number, 'wolf_pos': self.wolf.position,
-                                     'sheep_pos': [sheep.position.copy() if sheep.alive else None for sheep in
-                                                   self.all_sheep]})
+        self.simulation_data.append(
+            {'round_no': round_number, 'wolf_pos': self.wolf.position,
+             'sheep_pos': [sheep.position.copy() if sheep.alive else None
+                           for sheep in self.all_sheep]
+             }
+        )
         # using copy on sheep.position to avoid referencing sheep.position list changing in time
 
     @Logger.log_decor('debug', class_name=class_name)
@@ -76,6 +78,10 @@ Alive sheep: {len(self.alive_sheep)}
 
     @Logger.log_decor('debug', class_name=class_name)
     def run(self, number_of_rounds: int, await_input_after_round: bool = False):
+
+        if number_of_rounds < 5:
+            log_msg = "Less than 5 simulation rounds selected, results may not be accurate"
+            Logger.log('warning', log_msg)
 
         for round_number in range(1, number_of_rounds + 1):
             if len(self.alive_sheep) == 0:
